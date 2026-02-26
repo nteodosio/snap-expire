@@ -69,8 +69,33 @@ broadcast_debug(){
     s=$(printf '{"text":"```\n%s\n```"}' "$s")
     curl -s -X POST -H 'Content-Type:application/json' -d "$s" "$1"
 }
+#Expects parsed input such as
+# "llvm-chromium\t2026-03-26T00:00:00Z\tamd64\tlatest/stable/core22\t67"
+# "llvm-chromium\t2026-03-26T00:00:00Z\tarm64\tlatest/stable/core22\t66"
+# "llvm-chromium\t2026-03-26T00:00:00Z\tarmhf\tlatest/stable/core22\t65"
+#Where $1 is the snap, $2 its expiration, $(NF-1) as channel, $NF as revision
+rerelease_snaps_expiring_tomorrow(){
+    awk -v today="$(date -u +%FT%TZ)" '
+        {
+            gsub("\\\\t", " ")
+            gsub(/"/, "")
+        }
+        # Not a valid revision number? Ignore line.
+        $NF !~ /^[0123456789]+$/{
+           print("Line >>", $NF, "<< does not have a valid revision number, skipping")
+           next
+        }
+        {
+           "datediff -f %d " today " " $2 | getline daysTilExpires
+           if (daysTilExpires <= 25) {
+               # TODO: Remove echo and replace 25 by 1 once convinced this really works well.
+               system("echo snapcraft release " $1 " " $NF " " $(NF-1))
+           }
+        }
+ '
+}
 
-require surl jq curl datediff
+require surl jq curl datediff awk
 
 if [ $# != 1 ]; then
     usage
@@ -93,8 +118,13 @@ while read -r snapname ndays auth ping; do
       --arg snapname "$snapname" -f channel-map-api-parser; then
         pingList="$pingList $ping"
         hasResult=1
+        hasSnapToExpire=1
     fi
 done <"$1"
+
+if test -n "$hasSnapToExpire"; then
+    <"$toExpire" rerelease_snaps_expiring_tomorrow
+fi
 
 # In a public repository, scheduled workflows are automatically disabled
 # by Github when no repository activity has occurred in 60 days.
