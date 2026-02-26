@@ -34,6 +34,13 @@ jobs:
           export ACTION_URL
 
           printf %s "$FF_CHR_LLVM" > "$HOME/snap/surl/common/ff-chr-llvm.surl"
+          ln "$HOME/snap/surl/common/ff-chr-llvm.surl" \
+             "$HOME/snap/surl/common/firefox.surl"
+          ln "$HOME/snap/surl/common/ff-chr-llvm.surl" \
+             "$HOME/snap/surl/common/chromium.surl"
+          ln "$HOME/snap/surl/common/ff-chr-llvm.surl" \
+             "$HOME/snap/surl/common/llvm-chromium.surl"
+
           printf %s "$SNAP_STORE" > "$HOME/snap/surl/common/snap-store.surl"
           printf %s "$SNAPD_DESKTOP_INTEGRATION" > "$HOME/snap/surl/common/snapd-desktop-integration.surl"
           ./snap-expire watched-snaps

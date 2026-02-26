@@ -75,24 +75,8 @@ broadcast_debug(){
 # "llvm-chromium\t2026-03-26T00:00:00Z\tarmhf\tlatest/stable/core22\t65"
 #Where $1 is the snap, $2 its expiration, $(NF-1) as channel, $NF as revision
 rerelease_snaps_expiring_tomorrow(){
-    awk -v today="$(date -u +%FT%TZ)" '
-        {
-            gsub("\\\\t", " ")
-            gsub(/"/, "")
-        }
-        # Not a valid revision number? Ignore line.
-        $NF !~ /^[0123456789]+$/{
-           print("Line >>", $NF, "<< does not have a valid revision number, skipping")
-           next
-        }
-        {
-           "datediff -f %d " today " " $2 | getline daysTilExpires
-           if (daysTilExpires <= 25) {
-               # TODO: Remove echo and replace 25 by 1 once convinced this really works well.
-               system("echo snapcraft release " $1 " " $NF " " $(NF-1))
-           }
-        }
- '
+    url="https://dashboard.snapcraft.io/dev/api/snap-release/"
+    awk -v today="$(date -u +%FT%TZ)" -v url="$url" -f snap-releaser.awk
 }
 
 require surl jq curl datediff awk

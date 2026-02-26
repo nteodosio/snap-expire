@@ -1,5 +1,6 @@
 This repository's CI will daily broadcast snaps branches soon to expire in
-Mattermost's ~desktop-team-eng channel.
+Mattermost's ~desktop-team-eng channel. If the snap will expire in the
+following day, it will itself refresh the channel without human intervention.
 
 As the Snap Store considers that information is private data, to enroll
 your snaps here, you first need to gather authorization data.
@@ -8,15 +9,18 @@ The recipe to enroll your snaps is:
 
 * Locally, "snap install surl".
 * Locally,
-  $ surl -e {your@snapstore.email} -p package_access -s production --snap {snap} -a {auth-file}
+
+    surl -e {your@snapstore.email} -p package_release -p package_access \
+         -s production --snap {snap} -a {snap}
+
   You will be asked your password and 2FA.
   This causes your authentication identifier file {auth-file}.surl, used in next
   step, to be created.
-  You can provide multiple --snap arguments if you prefer to generate an
-  unified {auth-file}.surl.
+  You can opt-out of the "refresh without human intervention" part of this
+  automation by not giving "-p package_release".
 * Copy the contents of ~/snap/surl/common/{auth-file}.surl to a new repository
   secret in https://github.com/canonical/snap-expire/settings/secrets/actions.
-* Add your printf line and env line to .github/workflows/ci.yaml.
+* Add your env and printf lines to .github/workflows/ci.yaml.
 * Append your entry to watched-snaps, whose format is
 
   {snap} {expire-in} {auth-file} [{mattermost-ids}]
@@ -26,3 +30,5 @@ The recipe to enroll your snaps is:
                will expire in {expire-in} days.
   {mattermost-ids}: List of Mattermost IDs to ping (separated by whatever
                     punctuation, but not spaces, e.g. person1:person2,person3).
+
+* Yes, I do regret writing this as a shell script. Passing around text is no fun.
