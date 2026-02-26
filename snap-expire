@@ -90,7 +90,7 @@ while read -r snapname ndays auth ping; do
     fi
     if <"$unparsed" >>"$toExpire" jq -e \
       --arg til "$(date --date="today + $ndays days" +%s)" \
-      --arg snapname "$snapname" -f jsonparse; then
+      --arg snapname "$snapname" -f channel-map-api-parser; then
         pingList="$pingList $ping"
         hasResult=1
     fi
